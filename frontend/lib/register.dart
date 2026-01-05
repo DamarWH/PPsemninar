@@ -46,7 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("https://api.damargtg.store/api/api/auth/register"),
+        Uri.parse("https://damargtg.store/api/auth/register"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           // server expects display_name, email, password

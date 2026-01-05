@@ -24,7 +24,7 @@ class _AdminTransactionDetailPageState
   Map<String, dynamic>? _transactionData;
   bool _isLoading = true;
 
-  static const String BASE_URL = "https://api.damargtg.store/api";
+  static const String BASE_URL = "https://damargtg.store";
 
   @override
   void initState() {

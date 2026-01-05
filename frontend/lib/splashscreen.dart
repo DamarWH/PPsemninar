@@ -14,7 +14,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   static const String verifyUrl =
-      "https://api.damargtg.store/api/api/auth/verify-token";
+      "https://damargtg.store/api/auth/verify-token";
 
   @override
   void initState() {

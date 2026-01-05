@@ -50,7 +50,7 @@ class _PembayaranPageState extends State<PembayaranPage> {
   bool _orderCreated = false;
   bool _paymentWindowOpened = false;
 
-  static const String baseUrl = 'https://api.damargtg.store/api/api';
+  static const String baseUrl = 'https://damargtg.store/api';
   static const String midtransUrl =
       'https://midtrans-backend-production-62fb.up.railway.app';
 

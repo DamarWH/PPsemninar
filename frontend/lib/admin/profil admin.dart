@@ -24,7 +24,7 @@ class _ProfilePageAdminState extends State<ProfilePageAdmin>
   bool _isLoading = true;
   String? _token;
 
-  static const String BASE_URL = "https://api.damargtg.store/api";
+  static const String BASE_URL = "https://damargtg.store";
 
   @override
   void initState() {

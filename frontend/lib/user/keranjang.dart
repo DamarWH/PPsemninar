@@ -14,8 +14,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   bool isLoading = true;
-  String apiBase =
-      "https://api.damargtg.store/api"; // 🔥 GANTI sesuai backend Anda
+  String apiBase = "https://damargtg.store"; // 🔥 GANTI sesuai backend Anda
   String token = "";
   String userId = "";
   List<Map<String, dynamic>> items = [];
