@@ -22,7 +22,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   String selectedCategory = 'Semua';
   final List<String> categories = ['Semua', 'Pakaian', 'Bahan'];
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "https://api.damargtg.store/api";
 
   @override
   void initState() {

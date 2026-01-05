@@ -24,7 +24,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
   String _userRole = 'customer';
   bool _isLoading = true;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "https://api.damargtg.store/api";
 
   @override
   void initState() {

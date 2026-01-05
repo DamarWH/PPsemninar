@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "https://damargtg.store",
+  host: process.env.DB_HOST || "https://api.damargtg.store/api",
   user: process.env.DB_USER || "nodepp",
   password: process.env.DB_PASS || "",
   database: process.env.DB_NAME || "batiksekarniti"

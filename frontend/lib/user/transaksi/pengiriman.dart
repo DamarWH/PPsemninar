@@ -35,7 +35,7 @@ class _ShippingPageState extends State<ShippingPage> {
   String? _token;
   String? _userEmail;
 
-  static const String baseUrl = 'https://damargtg.store/api';
+  static const String baseUrl = 'https://api.damargtg.store/api/api';
 
   @override
   void initState() {

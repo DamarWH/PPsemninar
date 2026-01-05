@@ -26,7 +26,7 @@ class _ProfilePageState extends State<ProfilePage>
   Map<String, dynamic>? _userData;
 
   // base url backend
-  static const String _baseUrl = 'https://damargtg.store';
+  static const String _baseUrl = 'https://api.damargtg.store/api';
 
   @override
   void initState() {

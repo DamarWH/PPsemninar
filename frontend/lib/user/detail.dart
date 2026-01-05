@@ -19,7 +19,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   PageController pageController = PageController();
 
   // 🔥 GANTI dengan IP/URL backend Anda
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "https://api.damargtg.store/api";
 
   // Get list of image URLs from product data
   List<String> get imageUrls {

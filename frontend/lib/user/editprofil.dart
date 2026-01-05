@@ -35,7 +35,7 @@ class _EditProfilePageState extends State<EditProfilePage>
   String? _token;
 
   // Ganti dengan URL backend Anda
-  final String baseUrl = 'https://damargtg.store/api';
+  final String baseUrl = 'https://api.damargtg.store/api/api';
 
   @override
   void initState() {
