@@ -39,7 +39,7 @@ class _UserHomePageState extends State<UserHomePage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
-      final uri = Uri.parse("http://localhost:3000/api/products");
+      final uri = Uri.parse("https://damargtg.store:3000/api/products");
       final resp = await http.get(
         uri,
         headers: {
@@ -106,7 +106,7 @@ class _UserHomePageState extends State<UserHomePage> {
   ) async {
     try {
       final uri = Uri.parse(
-        "http://localhost:5000/predict",
+        "https://knnpp-production.up.railway.app/predict",
       ); // ganti URL jika perlu
       final resp = await http.post(
         uri,

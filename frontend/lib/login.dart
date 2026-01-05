@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://localhost:3000/api/auth/login"),
+        Uri.parse("https://damargtg.store:3000/api/auth/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"email": email, "password": password}),
       );

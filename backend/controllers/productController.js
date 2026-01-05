@@ -5,7 +5,7 @@ import path from "path";
 
 const uploadsBaseUrl = (req) => {
   // if you serve static at /uploads
-  const host = req.hostname || "localhost";
+  const host = req.hostname || "https://damargtg.store:3000";
   const port = process.env.PORT || 3000;
   return `${req.protocol}://${host}:${port}/uploads`;
 };

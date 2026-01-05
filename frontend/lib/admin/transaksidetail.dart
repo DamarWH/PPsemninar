@@ -1,9 +1,13 @@
-// lib/admin/transaksi_detail.dart - FIXED VERSION
+// lib/admin/transaksi_detail.dart - FIXED PRINT FEATURE
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/pdf.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class AdminTransactionDetailPage extends StatefulWidget {
   final String transactionId;
@@ -20,7 +24,7 @@ class _AdminTransactionDetailPageState
   Map<String, dynamic>? _transactionData;
   bool _isLoading = true;
 
-  static const String BASE_URL = "http://localhost:3000";
+  static const String BASE_URL = "https://damargtg.store:3000";
 
   @override
   void initState() {
@@ -38,7 +42,6 @@ class _AdminTransactionDetailPageState
     try {
       final token = await _getToken();
 
-      // ⭐ FIXED: Gunakan endpoint yang benar
       final resp = await http.get(
         Uri.parse('$BASE_URL/api/admin/orders/${widget.transactionId}'),
         headers: {
@@ -53,7 +56,6 @@ class _AdminTransactionDetailPageState
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         setState(() {
-          // ⭐ Response dari backend adalah {success: true, order: {...}}
           _transactionData = data['order'] ?? data;
           _isLoading = false;
         });
@@ -136,7 +138,6 @@ class _AdminTransactionDetailPageState
     try {
       final token = await _getToken();
 
-      // ⭐ FIXED: Gunakan endpoint yang benar
       final resp = await http.put(
         Uri.parse('$BASE_URL/api/admin/orders/${widget.transactionId}/status'),
         headers: {
@@ -224,7 +225,6 @@ class _AdminTransactionDetailPageState
                 try {
                   final token = await _getToken();
 
-                  // ⭐ FIXED: Gunakan endpoint yang benar
                   final resp = await http.put(
                     Uri.parse(
                       '$BASE_URL/api/admin/orders/${widget.transactionId}/tracking',
@@ -287,6 +287,442 @@ class _AdminTransactionDetailPageState
         ],
       ),
     );
+  }
+
+  // 🖨️ PRINT SHIPPING LABEL - FIXED VERSION
+  Future<void> _printShippingLabel() async {
+    debugPrint('🖨️ Print button clicked');
+
+    if (_transactionData == null) {
+      debugPrint('❌ Transaction data is null');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data transaksi tidak tersedia'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      debugPrint('📄 Starting PDF generation...');
+
+      final data = _transactionData!;
+      final orderIdDisplay =
+          data['order_id'] ?? data['orderId'] ?? widget.transactionId;
+      final customerName = data['name'] ?? '-';
+      final customerPhone = data['phone'] ?? '-';
+      final customerAddress = data['address'] ?? '-';
+      final customerCity = data['city'] ?? '-';
+      final customerPostalCode =
+          data['postal_code'] ?? data['postalCode'] ?? '-';
+      final trackingNumber =
+          data['tracking_number'] ?? data['trackingNumber'] ?? '-';
+      final shippingMethod =
+          data['shipping_method'] ?? data['shippingMethod'] ?? '-';
+
+      debugPrint('📦 Order ID: $orderIdDisplay');
+      debugPrint('👤 Customer: $customerName');
+
+      // Parse items
+      List<Map<String, dynamic>> items = [];
+      if (data['items'] is String) {
+        try {
+          items = List<Map<String, dynamic>>.from(jsonDecode(data['items']));
+        } catch (e) {
+          debugPrint('⚠️ Error parsing items from string: $e');
+          items = [];
+        }
+      } else if (data['items'] is List) {
+        items = List<Map<String, dynamic>>.from(data['items']);
+      }
+
+      debugPrint('📦 Total items: ${items.length}');
+
+      final pdf = pw.Document();
+
+      // Load logo
+      debugPrint('🖼️ Loading logo...');
+      pw.ImageProvider? logoImage;
+      try {
+        final logoData = await rootBundle.load(
+          'frontend/asset/icon/batiksekarniti.png',
+        );
+        logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+        debugPrint('✅ Logo loaded successfully');
+      } catch (e) {
+        debugPrint('⚠️ Logo load failed: $e');
+        // Continue without logo
+      }
+
+      debugPrint('📝 Building PDF page...');
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(20),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.black,
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        children: [
+                          // Logo (optional)
+                          if (logoImage != null) ...[
+                            pw.Container(
+                              width: 48,
+                              height: 48,
+                              decoration: pw.BoxDecoration(
+                                borderRadius: pw.BorderRadius.circular(6),
+                              ),
+                              child: pw.Image(
+                                logoImage,
+                                fit: pw.BoxFit.contain,
+                              ),
+                            ),
+                            pw.SizedBox(width: 12),
+                          ],
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                'LABEL PENGIRIMAN',
+                                style: pw.TextStyle(
+                                  color: PdfColors.white,
+                                  fontSize: 22,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                'Batik Sekarniti',
+                                style: const pw.TextStyle(
+                                  color: PdfColors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'Order ID',
+                            style: const pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 10,
+                            ),
+                          ),
+                          pw.Text(
+                            orderIdDisplay,
+                            style: pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                pw.SizedBox(height: 30),
+
+                // Informasi Pengiriman
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(16),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey400, width: 2),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            'INFORMASI PENGIRIMAN',
+                            style: pw.TextStyle(
+                              fontSize: 16,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                          pw.Text(
+                            shippingMethod,
+                            style: const pw.TextStyle(
+                              fontSize: 12,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Divider(thickness: 1),
+                      pw.SizedBox(height: 10),
+
+                      // Nomor Resi
+                      if (trackingNumber != '-') ...[
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(12),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.grey200,
+                            borderRadius: pw.BorderRadius.circular(6),
+                          ),
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                'NOMOR RESI',
+                                style: const pw.TextStyle(
+                                  fontSize: 10,
+                                  color: PdfColors.grey700,
+                                ),
+                              ),
+                              pw.SizedBox(height: 4),
+                              pw.Text(
+                                trackingNumber,
+                                style: pw.TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        pw.SizedBox(height: 20),
+                      ],
+
+                      // Info Penerima
+                      pw.Text(
+                        'PENERIMA',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        customerName,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        customerPhone,
+                        style: const pw.TextStyle(
+                          fontSize: 14,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 12),
+
+                      pw.Text(
+                        'ALAMAT TUJUAN',
+                        style: pw.TextStyle(
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.grey700,
+                        ),
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        customerAddress,
+                        style: const pw.TextStyle(fontSize: 14),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        '$customerCity, $customerPostalCode',
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                pw.SizedBox(height: 30),
+
+                // Daftar Produk
+                pw.Text(
+                  'DAFTAR PRODUK',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(12),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(6),
+                  ),
+                  child: pw.Column(
+                    children: [
+                      pw.Row(
+                        children: [
+                          pw.Expanded(
+                            flex: 3,
+                            child: pw.Text(
+                              'Nama Produk',
+                              style: pw.TextStyle(
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Text(
+                              'Ukuran',
+                              style: pw.TextStyle(
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Text(
+                              'Qty',
+                              style: pw.TextStyle(
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Divider(),
+                      ...items.map((item) {
+                        final itemName =
+                            item['nama'] ?? item['name'] ?? 'Produk';
+                        final itemQty = item['quantity'] ?? item['jumlah'] ?? 1;
+                        final itemSize = item['ukuran'] ?? item['size'] ?? '-';
+
+                        return pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                          child: pw.Row(
+                            children: [
+                              pw.Expanded(
+                                flex: 3,
+                                child: pw.Text(
+                                  itemName,
+                                  style: const pw.TextStyle(fontSize: 10),
+                                ),
+                              ),
+                              pw.Expanded(
+                                flex: 1,
+                                child: pw.Text(
+                                  itemSize,
+                                  style: const pw.TextStyle(fontSize: 10),
+                                ),
+                              ),
+                              pw.Expanded(
+                                flex: 1,
+                                child: pw.Text(
+                                  'x$itemQty',
+                                  style: const pw.TextStyle(fontSize: 10),
+                                  textAlign: pw.TextAlign.center,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+
+                pw.Spacer(),
+
+                // Footer
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(12),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey100,
+                    borderRadius: pw.BorderRadius.circular(6),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'CATATAN PENTING',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        '• Harap periksa kesesuaian alamat dan nomor telepon penerima',
+                        style: const pw.TextStyle(fontSize: 8),
+                      ),
+                      pw.Text(
+                        '• Pastikan paket dikemas dengan baik dan aman',
+                        style: const pw.TextStyle(fontSize: 8),
+                      ),
+                      pw.Text(
+                        '• Simpan bukti pengiriman untuk keperluan tracking',
+                        style: const pw.TextStyle(fontSize: 8),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      debugPrint('✅ PDF page built successfully');
+      debugPrint('🖨️ Opening print dialog...');
+
+      // Print atau share PDF
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async {
+          debugPrint('📄 Generating PDF for format: ${format.toString()}');
+          return pdf.save();
+        },
+      );
+
+      debugPrint('✅ Print dialog opened successfully');
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error during print: $e');
+      debugPrint('Stack trace: $stackTrace');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mencetak: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildSectionCard(String title, Widget content) {
@@ -423,7 +859,6 @@ class _AdminTransactionDetailPageState
     final data = _transactionData!;
     final status = data['status'] ?? 'pending';
 
-    // ⭐ Handle both snake_case and camelCase from backend
     final totalAmount =
         (data['total_price'] ??
         data['totalAmount'] ??
@@ -440,7 +875,6 @@ class _AdminTransactionDetailPageState
     final orderIdDisplay =
         data['order_id'] ?? data['orderId'] ?? widget.transactionId;
 
-    // Parse items
     List<Map<String, dynamic>> items = [];
     if (data['items'] is String) {
       try {
@@ -453,7 +887,6 @@ class _AdminTransactionDetailPageState
       items = List<Map<String, dynamic>>.from(data['items']);
     }
 
-    // Customer info from order table directly
     final customerName = data['name'] ?? '-';
     final customerEmail = data['email'] ?? '-';
     final customerPhone = data['phone'] ?? '-';
@@ -478,13 +911,24 @@ class _AdminTransactionDetailPageState
         title: const Text('Detail Transaksi'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        actions: [
+          // 🖨️ PRINT BUTTON
+          if (status == 'shipping' || status == 'processing')
+            IconButton(
+              icon: const Icon(Icons.print),
+              onPressed: () {
+                debugPrint('🖨️ Print icon pressed');
+                _printShippingLabel();
+              },
+              tooltip: 'Cetak Label Pengiriman',
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Order ID dan Status
             _buildSectionCard(
               'Informasi Transaksi',
               Column(
@@ -551,7 +995,6 @@ class _AdminTransactionDetailPageState
 
             const SizedBox(height: 16),
 
-            // Informasi Pelanggan
             _buildSectionCard(
               'Informasi Pelanggan',
               Column(
@@ -582,7 +1025,6 @@ class _AdminTransactionDetailPageState
 
             const SizedBox(height: 16),
 
-            // Informasi Pengiriman
             _buildSectionCard(
               'Informasi Pengiriman',
               Column(
@@ -609,7 +1051,6 @@ class _AdminTransactionDetailPageState
 
             const SizedBox(height: 16),
 
-            // Daftar Produk
             _buildSectionCard(
               'Daftar Produk ($totalItems item${totalItems > 1 ? 's' : ''})',
               Column(
@@ -630,7 +1071,6 @@ class _AdminTransactionDetailPageState
                     ),
                     child: Row(
                       children: [
-                        // Product Image
                         Container(
                           width: 60,
                           height: 60,
@@ -655,8 +1095,6 @@ class _AdminTransactionDetailPageState
                               : const Icon(Icons.image, color: Colors.grey),
                         ),
                         const SizedBox(width: 12),
-
-                        // Product Info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,7 +1147,6 @@ class _AdminTransactionDetailPageState
 
             const SizedBox(height: 16),
 
-            // Ringkasan Pembayaran
             _buildSectionCard(
               'Ringkasan Pembayaran',
               Column(
@@ -777,42 +1214,82 @@ class _AdminTransactionDetailPageState
                 ],
               ),
             ] else if (status == 'processing') ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showTrackingDialog(trackingNumber),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showTrackingDialog(trackingNumber),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.local_shipping),
+                      label: Text(
+                        trackingNumber == null
+                            ? 'Input Resi Pengiriman'
+                            : 'Update Resi Pengiriman',
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.local_shipping),
-                  label: Text(
-                    trackingNumber == null
-                        ? 'Input Resi Pengiriman'
-                        : 'Update Resi Pengiriman',
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _printShippingLabel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.print),
+                    label: const Text('Print'),
                   ),
-                ),
+                ],
               ),
             ] else if (status == 'shipping') ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showTrackingDialog(trackingNumber),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showTrackingDialog(trackingNumber),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Update Resi'),
                     ),
                   ),
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Update Resi Pengiriman'),
-                ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _printShippingLabel,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.print),
+                    label: const Text('Print'),
+                  ),
+                ],
               ),
             ],
 

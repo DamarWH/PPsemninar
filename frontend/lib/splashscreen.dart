@@ -13,8 +13,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  // sesuaikan alamat verify token backend-mu
-  static const String verifyUrl = "http://localhost:3000/api/auth/verify-token";
+  static const String verifyUrl =
+      "https://damargtg.store:3000/api/auth/verify-token";
 
   @override
   void initState() {
@@ -47,9 +47,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // kalau tidak ada token -> langsung ke login
     if (token == null || token.isEmpty) {
-      debugPrint('Splash: no token -> /login');
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, "/login");
+      // user guest → boleh lihat produk
+      Navigator.pushReplacementNamed(context, "/home");
       return;
     }
 

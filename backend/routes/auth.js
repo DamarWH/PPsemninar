@@ -1,4 +1,4 @@
-// routes/auth.js - COMPLETE AUTH ROUTES
+// routes/auth.js - FINAL FIX - GUARANTEED INTEGER IDs
 import express from "express";
 import { pool } from "../db.js";
 import bcrypt from "bcrypt";
@@ -7,6 +7,23 @@ import jwt from "jsonwebtoken";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "secret123";
 const SALT_ROUNDS = 10;
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Convert user database row to safe response format with guaranteed integer IDs
+ */
+function safeUserResponse(user) {
+  return {
+    id: Number(user.id), // Force conversion to number
+    email: String(user.email || ''),
+    display_name: String(user.display_name || ''),
+    role: String(user.role || 'user'),
+    created_at: user.created_at ? new Date(user.created_at).toISOString() : null
+  };
+}
 
 // ============================================
 // MIDDLEWARE
@@ -25,8 +42,12 @@ const auth = (req, res, next) => {
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    console.log(`✅ Token verified for user ID: ${decoded.id}`);
+    req.user = {
+      id: Number(decoded.id), // Ensure ID is number
+      email: decoded.email,
+      role: decoded.role
+    };
+    console.log(`✅ Token verified for user ID: ${req.user.id}`);
     next();
   } catch (e) {
     console.error("❌ Token verification failed:", e.message);
@@ -74,7 +95,7 @@ router.post("/register", async (req, res) => {
       [email, hash, display_name || null, role || 'user']
     );
     
-    const userId = result.insertId;
+    const userId = Number(result.insertId);
     
     // Generate JWT token
     const token = jwt.sign(
@@ -89,10 +110,10 @@ router.post("/register", async (req, res) => {
       message: "Registration successful",
       token, 
       user: { 
-        id: userId, 
-        email, 
-        display_name: display_name || null,
-        role: role || 'user'
+        id: userId,
+        email: String(email), 
+        display_name: String(display_name || ''),
+        role: String(role || 'user')
       } 
     });
   } catch (err) {
@@ -129,6 +150,7 @@ router.post("/login", async (req, res) => {
     }
     
     const user = rows[0];
+    const userId = Number(user.id);
     
     // Verify password
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
@@ -140,21 +162,21 @@ router.post("/login", async (req, res) => {
     
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role }, 
+      { id: userId, email: user.email, role: user.role }, 
       JWT_SECRET, 
       { expiresIn: "30d" }
     );
     
-    console.log(`✅ Login successful: ${email} (Role: ${user.role})`);
+    console.log(`✅ Login successful: ${email} (Role: ${user.role}, ID: ${userId})`);
     
     res.json({ 
       message: "Login successful",
       token, 
       user: { 
-        id: user.id, 
-        email: user.email, 
-        display_name: user.display_name,
-        role: user.role
+        id: userId,
+        email: String(user.email), 
+        display_name: String(user.display_name || ''),
+        role: String(user.role)
       } 
     });
   } catch (err) {
@@ -169,7 +191,7 @@ router.post("/login", async (req, res) => {
  */
 router.get("/me", auth, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     
     console.log(`👤 Fetching profile for user ID: ${userId}`);
     
@@ -190,13 +212,7 @@ router.get("/me", auth, async (req, res) => {
     
     res.json({ 
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        display_name: user.display_name,
-        role: user.role,
-        created_at: user.created_at
-      }
+      user: safeUserResponse(user)
     });
   } catch (err) {
     console.error("❌ Get profile error:", err);
@@ -210,7 +226,7 @@ router.get("/me", auth, async (req, res) => {
  */
 router.post("/verify", auth, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     
     console.log(`🔍 Verifying token for user ID: ${userId}`);
     
@@ -231,12 +247,7 @@ router.post("/verify", auth, async (req, res) => {
     
     res.json({ 
       valid: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        display_name: user.display_name,
-        role: user.role
-      }
+      user: safeUserResponse(user)
     });
   } catch (err) {
     console.error("❌ Token verification error:", err);
@@ -250,7 +261,7 @@ router.post("/verify", auth, async (req, res) => {
  */
 router.put("/profile", auth, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const { display_name, email } = req.body;
     
     console.log(`✏️ Updating profile for user ID: ${userId}`);
@@ -299,7 +310,7 @@ router.put("/profile", auth, async (req, res) => {
     
     res.json({ 
       message: "Profile updated successfully",
-      user: rows[0]
+      user: safeUserResponse(rows[0])
     });
   } catch (err) {
     console.error("❌ Update profile error:", err);
@@ -313,7 +324,7 @@ router.put("/profile", auth, async (req, res) => {
  */
 router.put("/password", auth, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = Number(req.user.id);
     const { current_password, new_password } = req.body;
     
     console.log(`🔑 Password change attempt for user ID: ${userId}`);

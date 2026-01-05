@@ -9,7 +9,7 @@ Future<Map<String, dynamic>?> getRecommendedSize(
   try {
     // Panggil API untuk prediksi ukuran
     final response = await http.post(
-      Uri.parse('http://localhost:3000/api/predict-size'),
+      Uri.parse('https://damargtg.store:3000/api/predict-size'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="schemas.android.com/apk/res/android">
     
     <!-- ✅ PERMISSIONS UNTUK WEBVIEW & INTERNET -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -9,7 +9,7 @@
         android:label="frontend"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">  <!-- ✅ PENTING: Allow HTTP traffic untuk localhost -->
+        android:usesCleartextTraffic="true">  <!-- ✅ PENTING: Allow HTTP traffic untuk https://damargtg.store:3000 -->
         
         <activity
             android:name=".MainActivity"

@@ -1,5 +1,7 @@
+// profile_page_admin.dart - UPDATED WITH MANAGE ADMIN MENU
 import 'dart:convert';
 import 'package:batiksekarniti/admin/home.dart';
+import 'package:batiksekarniti/admin/tambahadmin.dart';
 import 'package:batiksekarniti/admin/transaksi.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -22,7 +24,7 @@ class _ProfilePageAdminState extends State<ProfilePageAdmin>
   bool _isLoading = true;
   String? _token;
 
-  static const String BASE_URL = "http://localhost:3000";
+  static const String BASE_URL = "https://damargtg.store:3000";
 
   @override
   void initState() {
@@ -158,19 +160,24 @@ class _ProfilePageAdminState extends State<ProfilePageAdmin>
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
-        toolbarHeight: _isMobile(screenWidth) ? 80 : 100,
-        title: Text(
-          "Profil Admin",
-          style: TextStyle(
-            fontSize: _isMobile(screenWidth) ? 20 : 24,
-            fontWeight: FontWeight.bold,
-          ),
+        toolbarHeight: 100,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset('asset/icon/batiksekarniti.png', height: 60),
+            const SizedBox(width: 10),
+            const Text(
+              'Admin',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
         backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         foregroundColor: Colors.white,
-        elevation: 2,
-        centerTitle: true,
-        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: ConstrainedBox(
@@ -435,13 +442,20 @@ class _ProfilePageAdminState extends State<ProfilePageAdmin>
 
         SizedBox(height: _isMobile(screenWidth) ? 20 : 24),
 
-        // Menu Lainnya
-        _buildMenuSection("Lainnya", [
+        // ===== MENU MANAJEMEN - BARU DITAMBAHKAN =====
+        _buildMenuSection("Manajemen", [
           _buildMenuItem(
-            Icons.info_rounded,
-            "Tentang Aplikasi",
-            "Informasi aplikasi dan versi",
-            () => _showAboutDialog(context),
+            Icons.supervisor_account_rounded,
+            "Kelola Admin",
+            "Tambah dan hapus akun admin",
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManageAdminPage(),
+                ),
+              );
+            },
             screenWidth,
           ),
         ], screenWidth),

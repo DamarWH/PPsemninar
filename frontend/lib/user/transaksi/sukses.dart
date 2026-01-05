@@ -30,7 +30,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   String? _token;
   String? _userId;
 
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'https://damargtg.store:3000/api';
 
   @override
   void initState() {
@@ -496,39 +496,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    Navigator.of(
-                                      context,
-                                    ).pushNamedAndRemoveUntil(
-                                      '/transaction',
-                                      (route) => false,
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFFE00000),
-                                    side: const BorderSide(
-                                      color: Color(0xFFE00000),
-                                      width: 1.5,
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Lihat Riwayat Pesanan',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
 

@@ -1,4 +1,3 @@
-import 'package:batiksekarniti/admin/dashboard.dart';
 import 'package:batiksekarniti/admin/transaksidetail.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -14,7 +13,7 @@ class AdminTransactionPage extends StatefulWidget {
 }
 
 class _AdminTransactionPageState extends State<AdminTransactionPage> {
-  static const String baseUrl = 'http://localhost:3000/api';
+  static const String baseUrl = 'https://damargtg.store:3000/api';
 
   String _selectedFilter = 'all';
   bool _isLoading = true;
@@ -437,18 +436,6 @@ class _AdminTransactionPageState extends State<AdminTransactionPage> {
                     ),
                   ),
                 ],
-              ),
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MonthlyReportPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.assessment, color: Colors.black),
-                tooltip: 'Laporan Bulanan',
               ),
             ],
           ),

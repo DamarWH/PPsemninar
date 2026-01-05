@@ -1,4 +1,3 @@
-// lib/admin/editproduk.dart - MYSQL BACKEND (FIREBASE STYLE)
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -44,7 +43,7 @@ class _EditProductPageState extends State<EditProductPage> {
   bool _isLoading = false;
   bool _isSizeLoaded = false;
 
-  static const String BASE_URL = "http://localhost:3000";
+  static const String BASE_URL = "https://damargtg.store:3000";
 
   @override
   void initState() {
