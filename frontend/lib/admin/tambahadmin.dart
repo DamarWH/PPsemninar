@@ -26,7 +26,7 @@ class _ManageAdminPageState extends State<ManageAdminPage> {
   int? _currentUserId;
   String? _loadError;
 
-  static const String BASE_URL = "https://damargtg.store:3000";
+  static const String BASE_URL = "https://damargtg.store";
 
   @override
   void initState() {

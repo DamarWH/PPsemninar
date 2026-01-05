@@ -21,7 +21,7 @@ class _TransaksiDetailPageState extends State<TransaksiDetailPage> {
   bool _isLoading = false;
   late Map<String, dynamic> _transaction;
 
-  static const String baseUrl = 'https://damargtg.store:3000/api';
+  static const String baseUrl = 'https://damargtg.store/api';
 
   @override
   void initState() {

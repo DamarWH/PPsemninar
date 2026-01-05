@@ -34,7 +34,7 @@ class _AddProductPageState extends State<AddProductPage> {
   final Set<String> _selectedSizes = {};
   final Map<String, TextEditingController> _stockControllers = {};
 
-  static const String BASE_URL = "https://damargtg.store:3000";
+  static const String BASE_URL = "https://damargtg.store";
 
   @override
   void initState() {

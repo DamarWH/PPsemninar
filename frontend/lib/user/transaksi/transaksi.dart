@@ -13,7 +13,7 @@ class TransaksiScreen extends StatefulWidget {
 }
 
 class _TransaksiScreenState extends State<TransaksiScreen> {
-  static const String baseUrl = 'https://damargtg.store:3000/api';
+  static const String baseUrl = 'https://damargtg.store/api';
 
   List<Map<String, dynamic>> _transactions = [];
   List<Map<String, dynamic>> _filteredTransactions = [];

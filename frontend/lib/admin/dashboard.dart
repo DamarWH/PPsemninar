@@ -17,7 +17,7 @@ class _MonthlyReportPageState extends State<MonthlyReportPage> {
   Map<String, dynamic>? _cachedReport;
   bool _isLoading = false;
 
-  static const String BASE_URL = "https://damargtg.store:3000";
+  static const String BASE_URL = "https://damargtg.store";
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
