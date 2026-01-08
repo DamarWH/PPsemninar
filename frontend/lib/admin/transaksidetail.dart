@@ -24,7 +24,7 @@ class _AdminTransactionDetailPageState
   Map<String, dynamic>? _transactionData;
   bool _isLoading = true;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {
@@ -43,7 +43,7 @@ class _AdminTransactionDetailPageState
       final token = await _getToken();
 
       final resp = await http.get(
-        Uri.parse('$BASE_URL/api/admin/orders/${widget.transactionId}'),
+        Uri.parse('$BASE_URL/admin/orders/${widget.transactionId}'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -139,7 +139,7 @@ class _AdminTransactionDetailPageState
       final token = await _getToken();
 
       final resp = await http.put(
-        Uri.parse('$BASE_URL/api/admin/orders/${widget.transactionId}/status'),
+        Uri.parse('$BASE_URL/admin/orders/${widget.transactionId}/status'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ class _AdminTransactionDetailPageState
 
                   final resp = await http.put(
                     Uri.parse(
-                      '$BASE_URL/api/admin/orders/${widget.transactionId}/tracking',
+                      '$BASE_URL/admin/orders/${widget.transactionId}/tracking',
                     ),
                     headers: {
                       'Authorization': 'Bearer $token',

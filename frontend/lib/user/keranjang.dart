@@ -14,7 +14,7 @@ class CartPage extends StatefulWidget {
 
 class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   bool isLoading = true;
-  String apiBase = "https://damargtg.store"; // 🔥 GANTI sesuai backend Anda
+  static const String apiBase = "http://172.20.10.3:3000/cart";
   String token = "";
   String userId = "";
   List<Map<String, dynamic>> items = [];
@@ -22,21 +22,20 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // 🔥 Register observer
+    WidgetsBinding.instance.addObserver(this);
     _initAndFetch();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // 🔥 Unregister observer
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // 🔥 AUTO REFRESH: Dipanggil saat app kembali ke foreground
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      print('🔥 App resumed, refreshing cart...');
+      debugPrint('🔥 App resumed, refreshing cart...');
       if (token.isNotEmpty && userId.isNotEmpty) {
         fetchCart();
       }
@@ -47,74 +46,179 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     token = prefs.getString('token') ?? '';
     userId = prefs.getString('user_id') ?? prefs.getString('user_email') ?? '';
+
+    debugPrint(
+      '🔍 Cart init: token=${token.isNotEmpty ? "present" : "absent"}, userId=$userId',
+    );
+
     await fetchCart();
   }
 
   Future<void> fetchCart() async {
     setState(() => isLoading = true);
+
     try {
       if (token.isEmpty || userId.isEmpty) {
+        debugPrint('⚠️ No token or userId, skipping cart fetch');
         items = [];
         setState(() => isLoading = false);
         return;
       }
-      final uri = Uri.parse("$apiBase/api/cart?user_id=$userId");
-      final resp = await http.get(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+
+      final uri = Uri.parse("$apiBase?user_id=$userId");
+      debugPrint('📡 Fetching cart from: $uri');
+
+      final resp = await http
+          .get(
+            uri,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token",
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('📥 Cart response status: ${resp.statusCode}');
+      debugPrint('📥 Cart response body: ${resp.body}');
+
       if (resp.statusCode == 200) {
-        final List data = jsonDecode(resp.body);
-        items = data
-            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-            .toList();
-        print('✅ Cart loaded: ${items.length} items');
+        final dynamic responseData = jsonDecode(resp.body);
+
+        if (responseData is List) {
+          items = responseData
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
+          debugPrint('✅ Cart loaded (array format): ${items.length} items');
+        } else if (responseData is Map) {
+          final List? itemsList =
+              responseData['items'] ??
+              responseData['cart'] ??
+              responseData['data'];
+
+          if (itemsList != null && itemsList is List) {
+            items = itemsList
+                .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+                .toList();
+            debugPrint('✅ Cart loaded (object format): ${items.length} items');
+          } else {
+            debugPrint('⚠️ No items found in response object');
+            items = [];
+          }
+        } else {
+          debugPrint(
+            '⚠️ Unexpected response format: ${responseData.runtimeType}',
+          );
+          items = [];
+        }
+      } else if (resp.statusCode == 404) {
+        debugPrint('ℹ️ Cart not found (404) - treating as empty');
+        items = [];
       } else {
-        print("❌ fetchCart failed: ${resp.statusCode} ${resp.body}");
+        debugPrint("❌ fetchCart failed: ${resp.statusCode}");
+        debugPrint("❌ Response body: ${resp.body}");
         items = [];
       }
-    } catch (e) {
-      print("❌ fetchCart exception: $e");
+    } catch (e, stackTrace) {
+      debugPrint("❌ fetchCart exception: $e");
+      debugPrint(
+        "❌ Stack trace: ${stackTrace.toString().split('\n').take(3).join('\n')}",
+      );
       items = [];
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  /// 🔥 Clear semua cart items (dipanggil setelah checkout berhasil)
+  Future<bool> clearCart() async {
+    try {
+      if (token.isEmpty || userId.isEmpty) {
+        debugPrint('⚠️ No token or userId, cannot clear cart');
+        return false;
+      }
+
+      final uri = Uri.parse("$apiBase/clear?user_id=$userId");
+      debugPrint('📡 Clearing cart: $uri');
+
+      final resp = await http
+          .delete(
+            uri,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token",
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('📥 Clear cart response: ${resp.statusCode}');
+
+      if (resp.statusCode == 200) {
+        setState(() {
+          items = [];
+        });
+        debugPrint('✅ Cart cleared successfully');
+        return true;
+      } else {
+        debugPrint('❌ Failed to clear cart: ${resp.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ clearCart exception: $e");
+      return false;
     }
   }
 
   Future<bool> _updateQuantityApi(String cartId, int newQty) async {
     try {
-      final uri = Uri.parse("$apiBase/api/cart/$cartId");
-      final resp = await http.put(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"quantity": newQty}),
-      );
-      return resp.statusCode == 200;
+      final uri = Uri.parse("$apiBase/$cartId");
+      debugPrint('📡 Updating quantity: $uri, qty=$newQty');
+
+      final resp = await http
+          .put(
+            uri,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token",
+            },
+            body: jsonEncode({"quantity": newQty}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('📥 Update response: ${resp.statusCode}');
+
+      if (resp.statusCode == 200) {
+        return true;
+      } else {
+        debugPrint('❌ Update failed: ${resp.body}');
+        return false;
+      }
     } catch (e) {
-      print("❌ updateQuantity exception: $e");
+      debugPrint("❌ updateQuantity exception: $e");
       return false;
     }
   }
 
   Future<bool> _deleteCartApi(String cartId) async {
     try {
-      final uri = Uri.parse("$apiBase/api/cart/$cartId");
-      final resp = await http.delete(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final uri = Uri.parse("$apiBase/$cartId");
+      debugPrint('📡 Deleting cart item: $uri');
+
+      final resp = await http
+          .delete(
+            uri,
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer $token",
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('📥 Delete response: ${resp.statusCode}');
       return resp.statusCode == 200;
     } catch (e) {
-      print("❌ deleteCart exception: $e");
+      debugPrint("❌ deleteCart exception: $e");
       return false;
     }
   }
@@ -134,11 +238,20 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   }
 
   Future<void> _updateQuantity(String cartId, int newQuantity) async {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1) {
+      debugPrint('⚠️ Cannot set quantity < 1');
+      return;
+    }
+
     final idx = items.indexWhere(
       (it) => it['id'].toString() == cartId.toString(),
     );
-    if (idx == -1) return;
+
+    if (idx == -1) {
+      debugPrint('⚠️ Cart item not found: $cartId');
+      return;
+    }
+
     final old = items[idx];
     final oldQty = _parseToInt(old['quantity']);
 
@@ -146,17 +259,21 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
     setState(() => items[idx]['quantity'] = newQuantity);
 
     final ok = await _updateQuantityApi(cartId, newQuantity);
+
     if (!ok) {
-      // Rollback jika gagal
+      // Rollback on failure
       setState(() => items[idx]['quantity'] = oldQty);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Gagal mengubah jumlah (cek stok)'),
+            content: Text('Gagal mengubah jumlah (periksa stok)'),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
           ),
         );
       }
+    } else {
+      debugPrint('✅ Quantity updated: $cartId -> $newQuantity');
     }
   }
 
@@ -193,23 +310,30 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
     if (confirm != true) return;
 
     final ok = await _deleteCartApi(cartId);
+
     if (ok) {
-      items.removeWhere((it) => it['id'].toString() == cartId.toString());
-      setState(() {});
+      setState(() {
+        items.removeWhere((it) => it['id'].toString() == cartId.toString());
+      });
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('"$itemName" berhasil dihapus dari keranjang'),
             backgroundColor: const Color(0xFFE00000),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
+
+      debugPrint('✅ Cart item deleted: $cartId');
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Gagal menghapus item'),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -305,7 +429,9 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () => _updateQuantity(cartId, quantity - 1),
+                          onTap: quantity > 1
+                              ? () => _updateQuantity(cartId, quantity - 1)
+                              : null,
                           child: Container(
                             width: 28,
                             height: 28,
@@ -370,14 +496,17 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
 
   Widget _buildBottomSection() {
     if (items.isEmpty) return const SizedBox.shrink();
+
     int totalPrice = 0;
     int totalItems = 0;
+
     for (var it in items) {
       final harga = _parseToInt(it['harga']);
       final qty = _parseToInt(it['quantity']);
       totalPrice += harga * qty;
       totalItems += qty;
     }
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -443,25 +572,33 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
     );
   }
 
-  void _proceedToCheckout(List<Map<String, dynamic>> docs, int totalPrice) {
+  /// 🔥 MODIFIED: Checkout dengan callback untuk clear cart
+  void _proceedToCheckout(
+    List<Map<String, dynamic>> docs,
+    int totalPrice,
+  ) async {
     final List<Map<String, dynamic>> cartItems = [];
     final List<String> invalidItems = [];
 
     for (var data in docs) {
       final productId =
           data['product_id']?.toString() ?? data['produk_id']?.toString() ?? '';
+
       if (productId.isEmpty) {
         invalidItems.add(data['nama']?.toString() ?? 'Unknown Product');
         continue;
       }
+
       final nama = data['nama']?.toString() ?? 'Produk Tidak Dikenal';
       final harga = _parseToInt(data['harga']);
       final qty = _parseToInt(data['quantity']);
       final ukuran = data['size']?.toString() ?? '';
+
       if (ukuran.isEmpty) {
         invalidItems.add('$nama (ukuran tidak dipilih)');
         continue;
       }
+
       if (nama.isNotEmpty && harga > 0 && qty > 0) {
         cartItems.add({
           'id': data['id'],
@@ -508,6 +645,7 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
           ],
         ),
       );
+
       if (cartItems.isEmpty) return;
     }
 
@@ -523,12 +661,14 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
 
     int validTotalItems = 0;
     int validTotalPrice = 0;
+
     for (var item in cartItems) {
       validTotalItems += item['jumlah'] as int;
       validTotalPrice += item['subtotal'] as int;
     }
 
-    Navigator.push(
+    // 🔥 PENTING: Await navigation result
+    final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => ShippingPage(
@@ -538,6 +678,26 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
         ),
       ),
     );
+
+    // 🔥 Jika checkout berhasil (result == true), clear cart
+    if (result == true) {
+      debugPrint('🎉 Checkout completed successfully, clearing cart...');
+      final cleared = await clearCart();
+
+      if (cleared && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Pesanan berhasil! Keranjang telah dikosongkan'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else if (!cleared && mounted) {
+        debugPrint('⚠️ Failed to clear cart automatically');
+      }
+    } else {
+      debugPrint('ℹ️ Checkout cancelled or failed, cart not cleared');
+    }
   }
 
   @override
@@ -588,6 +748,7 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: fetchCart,
+                    color: const Color(0xFFE00000),
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: items.length,
@@ -646,7 +807,7 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.person_outline, size: 80, color: Colors.grey),
+          const Icon(Icons.person_outline, size: 80, color: Colors.grey),
           const SizedBox(height: 16),
           const Text(
             'Silakan login terlebih dahulu',

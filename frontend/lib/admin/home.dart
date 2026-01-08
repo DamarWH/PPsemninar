@@ -22,7 +22,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   String selectedCategory = 'Semua';
   final List<String> categories = ['Semua', 'Pakaian', 'Bahan'];
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {
@@ -43,7 +43,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       debugPrint('🔍 Fetching products...');
 
       final resp = await http.get(
-        Uri.parse('$BASE_URL/api/admin/products'),
+        Uri.parse('$BASE_URL/admin/products'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -149,7 +149,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       debugPrint('🗑️ Deleting product: $id');
 
       final resp = await http.delete(
-        Uri.parse('$BASE_URL/api/admin/products/$id'),
+        Uri.parse('$BASE_URL/admin/products/$id'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

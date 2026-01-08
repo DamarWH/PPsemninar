@@ -22,7 +22,6 @@ const auth = (req, res, next) => {
 
 // Helper: cek stock produk
 async function getProductStock(productId) {
-  // 🔥 PERBAIKAN: Gunakan 'stok' sesuai struktur database
   const [rows] = await pool.query(
     "SELECT id, stok, size_stock FROM products WHERE id = ? LIMIT 1", 
     [productId]
@@ -37,18 +36,17 @@ async function getProductStock(productId) {
       sizeStock = {};
     }
   }
-  // 🔥 PERBAIKAN: Gunakan 'stok' bukan 'stock'
   const stock = p.stok != null ? Number(p.stok) : null;
   return { stock, sizeStock };
 }
 
-// POST /api/cart - Tambah item ke cart
+// POST /cart - Tambah item ke cart
 router.post("/", auth, async (req, res) => {
   try {
     const { user_id, product_id, nama, harga, foto, size, quantity } = req.body;
     const uid = user_id || req.user.id || req.user.email || req.user.sub || null;
     
-    console.log("🔥 POST /api/cart received:", { user_id: uid, product_id, size, quantity });
+    console.log("🔥 POST /cart received:", { user_id: uid, product_id, size, quantity });
     
     if (!uid) return res.status(400).json({ error: "user_id tidak tersedia" });
     if (!product_id) return res.status(400).json({ error: "product_id required" });
@@ -79,26 +77,28 @@ router.post("/", auth, async (req, res) => {
       }
     }
 
-    const q = `INSERT INTO carts (user_id, product_id, nama, harga, foto, size, quantity)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    // ✅ FIXED: gunakan 'carts' (plural)
+    const q = `INSERT INTO carts (user_id, product_id, nama, harga, foto, size, quantity, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
     const [r] = await pool.query(q, [uid, product_id, nama || null, harga || 0, foto || null, size || null, qty]);
     
     console.log("✅ Cart item added successfully, ID:", r.insertId);
-    res.status(201).json({ id: r.insertId, success: true });
+    res.status(201).json({ id: r.insertId, success: true, ok: true });
   } catch (err) {
-    console.error("❌ POST /api/cart error:", err);
+    console.error("❌ POST /cart error:", err);
     res.status(500).json({ error: "server error", details: err.message });
   }
 });
 
-// GET /api/cart - Ambil cart user
+// GET /cart - Ambil cart user
 router.get("/", auth, async (req, res) => {
   try {
     const uid = req.query.user_id || req.user.id || req.user.email || req.user.sub;
     if (!uid) return res.status(400).json({ error: "user_id tidak tersedia" });
     
-    console.log("🔥 GET /api/cart for user:", uid);
+    console.log("🔥 GET /cart for user:", uid);
     
+    // ✅ FIXED: gunakan 'carts' (plural)
     const [rows] = await pool.query("SELECT * FROM carts WHERE user_id = ? ORDER BY created_at DESC", [uid]);
     
     console.log(`✅ Found ${rows.length} cart items`);
@@ -116,23 +116,24 @@ router.get("/", auth, async (req, res) => {
     }));
     res.json(normalized);
   } catch (err) {
-    console.error("❌ GET /api/cart error:", err);
-    res.status(500).json({ error: "server error" });
+    console.error("❌ GET /cart error:", err);
+    res.status(500).json({ error: "server error", details: err.message });
   }
 });
 
-// PUT /api/cart/:id - Update quantity atau size
+// PUT /cart/:id - Update quantity atau size
 router.put("/:id", auth, async (req, res) => {
   try {
     const id = req.params.id;
     const { quantity, size } = req.body;
     
-    console.log(`🔥 PUT /api/cart/${id}:`, { quantity, size });
+    console.log(`🔥 PUT /cart/${id}:`, { quantity, size });
     
     if ((quantity && (isNaN(Number(quantity)) || Number(quantity) < 1))) {
       return res.status(400).json({ error: "invalid quantity" });
     }
 
+    // ✅ FIXED: gunakan 'carts' (plural)
     const [rows] = await pool.query("SELECT * FROM carts WHERE id = ? LIMIT 1", [id]);
     if (!rows || rows.length === 0) return res.status(404).json({ error: "cart item not found" });
     const item = rows[0];
@@ -156,38 +157,43 @@ router.put("/:id", auth, async (req, res) => {
       if (prod.stock != null && prod.stock < newQty) return res.status(400).json({ error: "insufficient stock" });
     }
 
-    await pool.query("UPDATE carts SET quantity = ?, size = ? WHERE id = ?", [newQty, newSize, id]);
+    // ✅ FIXED: gunakan 'carts' (plural)
+    await pool.query("UPDATE carts SET quantity = ?, size = ?, updated_at = NOW() WHERE id = ?", [newQty, newSize, id]);
     
     console.log(`✅ Cart item ${id} updated successfully`);
     res.json({ ok: true });
   } catch (err) {
-    console.error("❌ PUT /api/cart/:id error:", err);
-    res.status(500).json({ error: "server error" });
+    console.error("❌ PUT /cart/:id error:", err);
+    res.status(500).json({ error: "server error", details: err.message });
   }
 });
 
-// DELETE /api/cart/:id - Hapus item cart
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/clear", auth, async (req, res) => {
   try {
-    const id = req.params.id;
+    const uid = req.query.user_id || req.user.id || req.user.email || req.user.sub;
     
-    console.log(`🔥 DELETE /api/cart/${id}`);
-    
-    const [rows] = await pool.query("SELECT user_id FROM carts WHERE id = ? LIMIT 1", [id]);
-    if (!rows || rows.length === 0) return res.status(404).json({ error: "not found" });
-    
-    const uid = req.user.id || req.user.email || req.user.sub;
-    if (uid && rows[0].user_id && uid.toString() !== rows[0].user_id.toString()) {
-      return res.status(403).json({ error: "forbidden" });
+    if (!uid) {
+      return res.status(400).json({ error: "user_id tidak tersedia" });
     }
     
-    await pool.query("DELETE FROM carts WHERE id = ?", [id]);
+    console.log(`🔥 DELETE /cart/clear for user: ${uid}`);
     
-    console.log(`✅ Cart item ${id} deleted successfully`);
-    res.json({ ok: true });
+    // Hapus semua cart items untuk user ini
+    const [result] = await pool.query(
+      "DELETE FROM carts WHERE user_id = ?", 
+      [uid]
+    );
+    
+    console.log(`✅ Cleared ${result.affectedRows} cart items for user ${uid}`);
+    
+    res.json({ 
+      ok: true, 
+      message: "Cart cleared successfully",
+      deletedCount: result.affectedRows 
+    });
   } catch (err) {
-    console.error("❌ DELETE /api/cart/:id error:", err);
-    res.status(500).json({ error: "server error" });
+    console.error("❌ DELETE /cart/clear error:", err);
+    res.status(500).json({ error: "server error", details: err.message });
   }
 });
 

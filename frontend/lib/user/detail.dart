@@ -19,7 +19,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   PageController pageController = PageController();
 
   // 🔥 GANTI dengan IP/URL backend Anda
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   // Get list of image URLs from product data
   List<String> get imageUrls {
@@ -895,7 +895,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   // 🔥 METHOD UTAMA: Tambah ke keranjang via backend
   Future<bool> _addToCart(String token, String userId) async {
     try {
-      final apiUrl = Uri.parse("$BASE_URL/api/cart");
+      final apiUrl = Uri.parse("$BASE_URL/cart");
 
       // Ambil product_id dengan prioritas field yang berbeda
       String productId = '';

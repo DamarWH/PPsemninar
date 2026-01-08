@@ -13,7 +13,7 @@ class AdminTransactionPage extends StatefulWidget {
 }
 
 class _AdminTransactionPageState extends State<AdminTransactionPage> {
-  static const String baseUrl = 'https://damargtg.store/api';
+  static const String baseUrl = 'http://172.20.10.3:3000';
 
   String _selectedFilter = 'all';
   bool _isLoading = true;

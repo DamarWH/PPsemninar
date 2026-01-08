@@ -39,7 +39,7 @@ class _UserHomePageState extends State<UserHomePage> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
-      final uri = Uri.parse("https://damargtg.store/api/products");
+      final uri = Uri.parse("http://172.20.10.3:3000/products");
       final resp = await http.get(
         uri,
         headers: {

@@ -43,7 +43,7 @@ class _EditProductPageState extends State<EditProductPage> {
   bool _isLoading = false;
   bool _isSizeLoaded = false;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {

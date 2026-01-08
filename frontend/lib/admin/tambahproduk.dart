@@ -34,7 +34,7 @@ class _AddProductPageState extends State<AddProductPage> {
   final Set<String> _selectedSizes = {};
   final Map<String, TextEditingController> _stockControllers = {};
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {
@@ -245,7 +245,7 @@ class _AddProductPageState extends State<AddProductPage> {
       debugPrint('➕ Adding product: $nama');
 
       // Create multipart request
-      final uri = Uri.parse('$BASE_URL/api/admin/products');
+      final uri = Uri.parse('$BASE_URL/admin/products');
       final request = http.MultipartRequest('POST', uri);
 
       request.headers['Authorization'] = 'Bearer $token';

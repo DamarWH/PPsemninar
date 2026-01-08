@@ -26,7 +26,7 @@ class _ProfilePageState extends State<ProfilePage>
   Map<String, dynamic>? _userData;
 
   // base url backend
-  static const String _baseUrl = 'https://damargtg.store';
+  static const String _baseUrl = 'http://172.20.10.3:3000';
 
   @override
   void initState() {
@@ -125,7 +125,7 @@ class _ProfilePageState extends State<ProfilePage>
 
       // 1️⃣ Verify token → ambil user id
       final verifyResp = await http.get(
-        Uri.parse('$_baseUrl/api/auth/verify-token'),
+        Uri.parse('$_baseUrl/auth/verify-token'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ class _ProfilePageState extends State<ProfilePage>
 
       // 2️⃣ Ambil profile lengkap (ADA display_name)
       final profileResp = await http.get(
-        Uri.parse('$_baseUrl/api/users/$userId/profile'),
+        Uri.parse('$_baseUrl/users/$userId/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

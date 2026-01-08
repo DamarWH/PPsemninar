@@ -61,4 +61,4 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  image_path: "asset/icon/icon.png"
+  image_path: "asset/icon/batiksekarniti.png"

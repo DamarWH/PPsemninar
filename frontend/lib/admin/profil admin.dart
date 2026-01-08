@@ -24,7 +24,7 @@ class _ProfilePageAdminState extends State<ProfilePageAdmin>
   bool _isLoading = true;
   String? _token;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {
@@ -72,7 +72,7 @@ class _ProfilePageAdminState extends State<ProfilePageAdmin>
       debugPrint('🔑 Token: ${_token!.substring(0, 20)}...');
 
       final resp = await http.get(
-        Uri.parse('$BASE_URL/api/auth/me'),
+        Uri.parse('$BASE_URL/auth/me'),
         headers: {
           'Authorization': 'Bearer $_token',
           'Accept': 'application/json',

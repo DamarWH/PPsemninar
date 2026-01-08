@@ -17,7 +17,7 @@ class _MonthlyReportPageState extends State<MonthlyReportPage> {
   Map<String, dynamic>? _cachedReport;
   bool _isLoading = false;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
@@ -63,7 +63,7 @@ class _MonthlyReportPageState extends State<MonthlyReportPage> {
       // ⭐ FIXED: Panggil endpoint admin/report
       final resp = await http.get(
         Uri.parse(
-          '$BASE_URL/api/orders/admin/report?startDate=$startDate&endDate=$endDate', // ⭐ Tambah /orders
+          '$BASE_URL/orders/admin/report?startDate=$startDate&endDate=$endDate', // ⭐ Tambah /orders
         ),
         headers: {
           'Authorization': 'Bearer $token',

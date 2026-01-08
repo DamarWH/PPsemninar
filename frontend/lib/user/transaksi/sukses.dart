@@ -30,7 +30,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
   String? _token;
   String? _userId;
 
-  static const String baseUrl = 'https://damargtg.store/api';
+  static const String baseUrl = 'http://172.20.10.3:3000';
 
   @override
   void initState() {

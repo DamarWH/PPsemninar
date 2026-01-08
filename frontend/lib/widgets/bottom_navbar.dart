@@ -24,7 +24,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
   String _userRole = 'customer';
   bool _isLoading = true;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {
@@ -39,11 +39,19 @@ class _BottomNavBarState extends State<BottomNavBar> {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
+      debugPrint(
+        '🔍 BottomNavBar: Checking role for token: ${token.isNotEmpty ? "present" : "absent"}',
+      );
+
       if (token.isEmpty) {
+        debugPrint('⚠️ BottomNavBar: No token found, defaulting to customer');
         _userRole = 'customer';
       } else {
         try {
-          final uri = Uri.parse("$BASE_URL/api/auth/verify-token");
+          // ✅ PERBAIKAN: Endpoint yang benar (tanpa /api)
+          final uri = Uri.parse("$BASE_URL/auth/verify-token");
+          debugPrint('📡 BottomNavBar: Calling verify-token endpoint: $uri');
+
           final resp = await http
               .get(
                 uri,
@@ -54,31 +62,62 @@ class _BottomNavBarState extends State<BottomNavBar> {
               )
               .timeout(const Duration(seconds: 6));
 
+          debugPrint(
+            '📥 BottomNavBar: verify-token response status=${resp.statusCode}',
+          );
+          debugPrint(
+            '📥 BottomNavBar: verify-token response body=${resp.body}',
+          );
+
           if (resp.statusCode == 200) {
             final body = jsonDecode(resp.body);
             if (body is Map && body['valid'] == true && body['user'] != null) {
               final user = body['user'];
-              final role =
-                  (user['role'] ?? user['user_role'] ?? user['role_name'] ?? '')
-                      .toString()
-                      .toLowerCase();
+              final role = (user['role'] ?? '').toString().toLowerCase();
+
               _userRole = role == 'admin' ? 'admin' : 'customer';
+
+              // Simpan role ke prefs untuk konsistensi
+              await prefs.setString('user_role', _userRole);
+
+              debugPrint(
+                '✅ BottomNavBar: Role detected from server -> $_userRole',
+              );
             } else {
+              debugPrint(
+                '⚠️ BottomNavBar: Invalid response structure, defaulting to customer',
+              );
               _userRole = 'customer';
             }
           } else {
+            debugPrint(
+              '⚠️ BottomNavBar: Non-200 status, defaulting to customer',
+            );
             _userRole = 'customer';
           }
         } catch (e) {
-          _userRole = 'customer';
+          debugPrint('❌ BottomNavBar: Error verifying token: $e');
+          // Fallback: cek role dari prefs
+          final storedRole = prefs.getString('user_role') ?? 'customer';
+          _userRole = storedRole.toLowerCase() == 'admin'
+              ? 'admin'
+              : 'customer';
+          debugPrint(
+            '⚠️ BottomNavBar: Using stored role from prefs -> $_userRole',
+          );
         }
       }
     } catch (e) {
+      debugPrint('❌ BottomNavBar: Fatal error in _getUserRole: $e');
       _userRole = 'customer';
     }
 
     final itemCount = _getBottomNavItemsForRole(_userRole).length;
     if (_selectedIndex >= itemCount) _selectedIndex = 0;
+
+    debugPrint(
+      '🎯 BottomNavBar: Final role = $_userRole, selectedIndex = $_selectedIndex',
+    );
 
     if (mounted) setState(() => _isLoading = false);
   }
@@ -92,8 +131,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
       return [
         const MonthlyReportPage(), // Dashboard - Laporan Bulanan
         const AdminHomePage(), // Produk
-        const AdminTransactionPage(), // ✅ Transaksi Admin
-        const ProfilePageAdmin(), // ✅ Profil Admin
+        const AdminTransactionPage(), // Transaksi Admin
+        const ProfilePageAdmin(), // Profil Admin
       ];
     } else {
       return [

@@ -1,3 +1,4 @@
+// lib/user/transaksi/pengiriman.dart
 import 'dart:convert';
 import 'package:batiksekarniti/user/transaksi/pembayaran.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +36,7 @@ class _ShippingPageState extends State<ShippingPage> {
   String? _token;
   String? _userEmail;
 
-  static const String baseUrl = 'https://damargtg.store/api';
+  static const String baseUrl = 'http://172.20.10.3:3000';
 
   @override
   void initState() {
@@ -167,7 +168,7 @@ class _ShippingPageState extends State<ShippingPage> {
     }
   }
 
-  // 🔥 LANGSUNG KE PEMBAYARAN (tanpa create order dulu)
+  /// 🔥 MODIFIED: Checkout dengan callback result
   void _processCheckout() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -180,9 +181,8 @@ class _ShippingPageState extends State<ShippingPage> {
 
         if (!mounted) return;
 
-        // 2. Langsung ke halaman pembayaran
-        // Order akan dibuat di PembayaranPage
-        Navigator.pushReplacement(
+        // 2. Navigate ke halaman pembayaran dengan await
+        final paymentResult = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
             builder: (_) => PembayaranPage(
@@ -198,6 +198,21 @@ class _ShippingPageState extends State<ShippingPage> {
             ),
           ),
         );
+
+        // 3. 🔥 Jika pembayaran berhasil, return true ke CartPage
+        if (paymentResult == true && mounted) {
+          debugPrint('✅ Payment successful, returning to cart');
+          Navigator.of(context).pop(true); // Return true ke CartPage
+        } else if (paymentResult == false && mounted) {
+          debugPrint('❌ Payment failed or cancelled');
+          // Bisa tampilkan pesan error atau tetap di shipping page
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pembayaran dibatalkan atau gagal'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
       } catch (e) {
         debugPrint('❌ Checkout error: $e');
 

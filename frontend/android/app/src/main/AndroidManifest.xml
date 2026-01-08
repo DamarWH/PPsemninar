@@ -9,7 +9,7 @@
         android:label="frontend"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">  <!-- ✅ PENTING: Allow HTTP traffic untuk https://damargtg.store -->
+        android:usesCleartextTraffic="true">  <!-- ✅ PENTING: Allow HTTP traffic untuk http://172.20.10.3:3000 -->
         
         <activity
             android:name=".MainActivity"

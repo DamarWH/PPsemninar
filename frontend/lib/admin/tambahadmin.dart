@@ -26,7 +26,7 @@ class _ManageAdminPageState extends State<ManageAdminPage> {
   int? _currentUserId;
   String? _loadError;
 
-  static const String BASE_URL = "https://damargtg.store";
+  static const String BASE_URL = "http://172.20.10.3:3000";
 
   @override
   void initState() {
@@ -166,7 +166,7 @@ class _ManageAdminPageState extends State<ManageAdminPage> {
 
       final response = await http
           .get(
-            Uri.parse('$BASE_URL/api/admin/list'),
+            Uri.parse('$BASE_URL/admin/list'),
             headers: {
               'Authorization': 'Bearer $_token',
               'Accept': 'application/json',
@@ -294,7 +294,7 @@ class _ManageAdminPageState extends State<ManageAdminPage> {
       debugPrint('👤 Creating admin: ${_emailController.text}');
 
       final response = await http.post(
-        Uri.parse('$BASE_URL/api/admin/create'),
+        Uri.parse('$BASE_URL/admin/create'),
         headers: {
           'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
@@ -371,7 +371,7 @@ class _ManageAdminPageState extends State<ManageAdminPage> {
       debugPrint('🗑️ Deleting admin ID: $adminId');
 
       final response = await http.delete(
-        Uri.parse('$BASE_URL/api/admin/delete/$adminId'),
+        Uri.parse('$BASE_URL/admin/delete/$adminId'),
         headers: {
           'Authorization': 'Bearer $_token',
           'Accept': 'application/json',
